@@ -1,0 +1,309 @@
+import random
+from datetime import datetime
+
+import pygame
+import sys
+import os
+
+
+def load_image(name, color_key=None):
+    fullname = os.path.join('data', name)
+    try:
+        image = pygame.image.load(fullname).convert()
+    except pygame.error as message:
+        print('Cannot load image:', name)
+        raise SystemExit(message)
+    image = image.convert_alpha()
+    if color_key is not None:
+        if color_key == -1:
+            color_key = image.get_at((0, 0))
+        image.set_colorkey(color_key)
+    return image
+
+
+class SpriteGroup(pygame.sprite.Group):
+    def __init__(self):
+        super().__init__()
+
+    def get_event(self, event):
+        for sprite in self:
+            sprite.get_event(event)
+
+
+class AnimatedSprite(pygame.sprite.Sprite):
+    def __init__(self, group, sheet, columns, rows, x, y):
+        super().__init__(group)
+        self.frames = []
+        self.col, self.row = columns, rows
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(x, y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                for _ in range(0, 64 // self.col * self.row):
+                    self.frames.append(pygame.transform.scale(sheet.subsurface(pygame.Rect(
+                        frame_location, self.rect.size)), (150, 150)).convert_alpha())
+
+    def get_frames(self):
+        return self.frames
+
+    def set_frames(self, new_frames):
+        self.frames = new_frames
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+
+
+class Sprite(pygame.sprite.Sprite):
+    def __init__(self, group):
+        super().__init__(group)
+        self.rect = None
+
+    def get_event(self, event):
+        pass
+
+
+class Tile(Sprite):
+    def __init__(self, pos, size):
+        super().__init__(all_sprites)
+        self.image = pygame.Surface(size)
+        self.image.fill(pygame.Color('grey'))
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+
+
+class Level(Sprite):
+    def __init__(self):
+        super().__init__(level_group)
+
+
+class Slime(AnimatedSprite):
+    def __init__(self, pos, sheet, columns, rows, x, y):
+        super().__init__(all_sprites, sheet, columns, rows, x, y)
+        self.rect = self.image.get_rect()
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+        self.jump_value = 20
+        self.health = 5
+        self.damage = 1
+        self.exp = 0
+
+    def update(self):
+        super().update()
+        if not pygame.sprite.spritecollideany(self, horizontal_borders):
+            self.rect = self.rect.move(0, 5)
+
+
+class Border(Sprite):
+    def __init__(self, x1, y1, x2):
+        super().__init__(all_sprites)
+        self.add(horizontal_borders)
+        self.image = pygame.Surface([x2 - x1, 1])
+        self.rect = pygame.Rect(x1, y1, x2 - x1, 1)
+
+
+class Monster(AnimatedSprite):
+    def __init__(self, pos, sheet, columns, rows, x, y, hp):
+        super().__init__(all_sprites, sheet, columns, rows, x, y)
+        self.add(monster_group)
+        self.lr = False
+        self.rect = self.image.get_rect()
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+        self.move_rect = -3
+        self.hp = hp
+        self.last_now = datetime.now()
+        self.rotate = True
+        self.left_or_right = False
+
+    def update(self):
+        super().update()
+        if self.rotate:
+            for i in range(len(self.frames)):
+                self.frames[i] = pygame.transform.flip(self.frames[i], True, False)
+            self.rotate = False
+        if self.rect.x + 150 > width:
+            self.move_rect = -self.move_rect
+            self.rotate = True
+            self.left_or_right = True
+        elif self.rect.x < 0:
+            self.move_rect = -self.move_rect
+            self.rotate = True
+            self.left_or_right = False
+        if self.lr:
+            self.rect.x += self.move_rect
+        if not len(pygame.sprite.spritecollide(self, horizontal_borders, False)) == 1:
+            self.rect = self.rect.move(0, 5)
+        if (datetime.now() - self.last_now).seconds > random.randint(1, 3):
+            self.move_rect = random.randrange(-3, 3, 3)
+            self.last_now = datetime.now()
+        if self.move_rect == -3 and self.left_or_right:
+            self.rotate = True
+            self.left_or_right = False
+        elif self.move_rect == 3 and not self.left_or_right:
+            self.rotate = True
+            self.left_or_right = True
+        self.rect.x += self.move_rect
+
+
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
+def start_screen():
+    intro_text = [load_image('Slime_rush.png', -1), load_image('button.png', -1)]
+    fon = pygame.transform.scale(load_image('start_image.png'), screen_size)
+    screen.blit(fon, (0, 0))
+    text = Sprite(start_screen_group)
+    text.image = intro_text[0]
+    text.image = pygame.transform.scale(text.image, (1500, 500)).convert_alpha()
+    text.rect = (width // 9, height // 7)
+    text2 = Sprite(start_screen_group)
+    text2.image = intro_text[1]
+    text2.image = pygame.transform.scale(text2.image, (1000, 250)).convert_alpha()
+    text2.rect = (width // 4, height // 1.5)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        start_screen_group.draw(screen)
+        start_screen_group.update()
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def check_level(side):
+    global cur_loc
+    try:
+        c_loc = cur_loc
+        if side == 'right':
+            c_loc += 1
+            loc = rooms[c_loc]
+        if side == 'left':
+            c_loc -= 1
+            if c_loc >= 0:
+                loc = rooms[c_loc]
+            else:
+                raise IndexError
+        cur_loc = c_loc
+        return True
+    except IndexError:
+        return False
+
+
+def move(side):
+    global right, left
+    global right_w, left_w
+    if side == 'right':
+        if left_w:
+            for i in range(len(player.frames)):
+                player.frames[i] = pygame.transform.flip(player.frames[i], True, False)
+        right_w, left_w = True, False
+        right, left = True, False
+    elif side == 'left':
+        if right_w:
+            for i in range(len(player.frames)):
+                player.frames[i] = pygame.transform.flip(player.frames[i], True, False)
+        right_w, left_w = False, True
+        right, left = False, True
+
+
+pygame.init()
+screen_size = width, height = (1920, 1080)
+screen = pygame.display.set_mode(screen_size)
+pygame.display.set_caption('Slime rush')
+FPS = 60
+
+images_sprites = {
+    'player': load_image('Slime.png', -1),
+    'skeleton': load_image('Skeleton.png', -1),
+    'zombie': load_image('Zombie.png', -1),
+    'ratatuy': load_image('ratatuy.png', -1),
+    'button': load_image('button.png', -1)
+}
+
+all_sprites = SpriteGroup()
+clock = pygame.time.Clock()
+horizontal_borders = SpriteGroup()
+doors_group = SpriteGroup()
+monster_group = SpriteGroup()
+level_group = SpriteGroup()
+start_screen_group = SpriteGroup()
+right, left = False, False
+right_w, left_w = True, False
+jump, crouch = False, False
+jump_max = 0
+cur_loc = 0
+rooms = [pygame.transform.scale(load_image('start_screen.png'), screen_size),
+         pygame.transform.scale(load_image('level_2.png'), screen_size),
+         pygame.transform.scale(load_image('level_3.png'), screen_size)]
+
+
+start_screen()
+Border(5, height - 50, width - 5)
+player = Slime((1920 // 2, 800), images_sprites['player'], 4, 1, 0, 0)
+skeleton = Monster((500, 500), images_sprites['skeleton'], 4, 1, 0, 0, 3)
+zombie = Monster((700, 500), images_sprites['zombie'], 4, 1, 0, 0, 3)
+ratatuy = Monster((900, 500), images_sprites['ratatuy'], 4, 1, 0, 0, 1)
+
+running = True
+
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN:
+            if (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and not right:
+                move('right')
+            if (event.key == pygame.K_LEFT or event.key == pygame.K_a) and not left:
+                move('left')
+            if (event.key == pygame.K_UP or event.key == pygame.K_SPACE or event.key == pygame.K_w) and not jump \
+                    and pygame.sprite.spritecollideany(player, horizontal_borders) and not crouch:
+                jump = True
+                jump_max = player.rect.y - 150
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                pass
+        if event.type == pygame.KEYUP:
+            if (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and not left:
+                right = False
+            if (event.key == pygame.K_LEFT or event.key == pygame.K_a) and not right:
+                left = False
+    if right:
+        player.rect.x += 10
+        if player.rect.x + 150 > width:
+            if check_level('right'):
+                player.rect.x = 0
+            else:
+                player.rect.x -= 10
+    elif left:
+        player.rect.x -= 10
+        if player.rect.x < 0:
+            if check_level('left'):
+                player.rect.x = width - 150
+            else:
+                player.rect.x += 10
+    if jump:
+        player.rect.y -= player.jump_value
+        if player.rect.y < 0:
+            player.rect.y += 10
+        if player.rect.y <= jump_max:
+            jump = False
+    fon = rooms[cur_loc]
+    screen.blit(fon, (0, 0))
+    all_sprites.draw(screen)
+    all_sprites.update()
+    pygame.display.flip()
+    clock.tick(FPS)
+pygame.quit()
