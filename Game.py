@@ -97,8 +97,6 @@ class Slime(AnimatedSprite):
 
     def update(self):
         super().update()
-        if not pygame.sprite.spritecollideany(self, horizontal_borders):
-            self.rect = self.rect.move(0, 5)
 
 
 class Border(Sprite):
@@ -242,7 +240,7 @@ level_group = SpriteGroup()
 start_screen_group = SpriteGroup()
 right, left = False, False
 right_w, left_w = True, False
-jump, crouch = False, False
+up, down = False, False
 jump_max = 0
 cur_loc = 0
 rooms = [pygame.transform.scale(load_image('start_screen.png'), screen_size),
@@ -268,10 +266,10 @@ while running:
                 move('right')
             if (event.key == pygame.K_LEFT or event.key == pygame.K_a) and not left:
                 move('left')
-            if (event.key == pygame.K_UP or event.key == pygame.K_SPACE or event.key == pygame.K_w) and not jump \
-                    and pygame.sprite.spritecollideany(player, horizontal_borders) and not crouch:
-                jump = True
-                jump_max = player.rect.y - 150
+            if (event.key == pygame.K_UP or event.key == pygame.K_w) and not down:
+                up, down = True, False
+            if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
+                down, up = True, False
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 pass
@@ -280,26 +278,32 @@ while running:
                 right = False
             if (event.key == pygame.K_LEFT or event.key == pygame.K_a) and not right:
                 left = False
+            if (event.key == pygame.K_UP or event.key == pygame.K_w) and not down:
+                up = False
+            if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
+                down = False
     if right:
-        player.rect.x += 10
+        player.rect.x += 7
         if player.rect.x + 150 > width:
             if check_level('right'):
                 player.rect.x = 0
             else:
-                player.rect.x -= 10
+                player.rect.x -= 7
     elif left:
-        player.rect.x -= 10
+        player.rect.x -= 7
         if player.rect.x < 0:
             if check_level('left'):
                 player.rect.x = width - 150
             else:
-                player.rect.x += 10
-    if jump:
-        player.rect.y -= player.jump_value
-        if player.rect.y < 0:
-            player.rect.y += 10
-        if player.rect.y <= jump_max:
-            jump = False
+                player.rect.x += 7
+    if up:
+        player.rect.y -= 7
+        if player.rect.y + 150 // 2 < 0:
+            player.rect.y += 7
+    elif down:
+        player.rect.y += 7
+        if player.rect.y + 150 > height:
+            player.rect.y = height - 150
     fon = rooms[cur_loc]
     screen.blit(fon, (0, 0))
     all_sprites.draw(screen)
