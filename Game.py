@@ -39,6 +39,8 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.rect.move(x, y)
+        self.move_x = random.randrange(-3, 3, 3)
+        self.move_y = random.randrange(-3, 3, 3)
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -99,23 +101,13 @@ class Slime(AnimatedSprite):
         super().update()
 
 
-class Border(Sprite):
-    def __init__(self, x1, y1, x2):
-        super().__init__(all_sprites)
-        self.add(horizontal_borders)
-        self.image = pygame.Surface([x2 - x1, 1])
-        self.rect = pygame.Rect(x1, y1, x2 - x1, 1)
-
-
 class Monster(AnimatedSprite):
     def __init__(self, pos, sheet, columns, rows, x, y, hp):
         super().__init__(all_sprites, sheet, columns, rows, x, y)
         self.add(monster_group)
-        self.lr = False
         self.rect = self.image.get_rect()
         self.rect.x = pos[0]
         self.rect.y = pos[1]
-        self.move_rect = -3
         self.hp = hp
         self.last_now = datetime.now()
         self.rotate = True
@@ -128,27 +120,27 @@ class Monster(AnimatedSprite):
                 self.frames[i] = pygame.transform.flip(self.frames[i], True, False)
             self.rotate = False
         if self.rect.x + 150 > width:
-            self.move_rect = -self.move_rect
+            self.move_x = -self.move_x
             self.rotate = True
             self.left_or_right = True
         elif self.rect.x < 0:
-            self.move_rect = -self.move_rect
+            self.move_x = -self.move_x
             self.rotate = True
             self.left_or_right = False
-        if self.lr:
-            self.rect.x += self.move_rect
-        if not len(pygame.sprite.spritecollide(self, horizontal_borders, False)) == 1:
-            self.rect = self.rect.move(0, 5)
+        if self.rect.y + 150 > height or self.rect.y < 0:
+            self.move_y = -self.move_y
         if (datetime.now() - self.last_now).seconds > random.randint(1, 3):
-            self.move_rect = random.randrange(-3, 3, 3)
+            self.move_x = random.randrange(-3, 3, 3)
+            self.move_y = random.randrange(-3, 3, 3)
             self.last_now = datetime.now()
-        if self.move_rect == -3 and self.left_or_right:
+        if self.move_x == -3 and self.left_or_right:
             self.rotate = True
             self.left_or_right = False
-        elif self.move_rect == 3 and not self.left_or_right:
+        elif self.move_x == 3 and not self.left_or_right:
             self.rotate = True
             self.left_or_right = True
-        self.rect.x += self.move_rect
+        self.rect.x += self.move_x
+        self.rect.y += self.move_y
 
 
 def terminate():
@@ -249,7 +241,6 @@ rooms = [pygame.transform.scale(load_image('start_screen.png'), screen_size),
 
 
 start_screen()
-Border(5, height - 50, width - 5)
 player = Slime((1920 // 2, 800), images_sprites['player'], 4, 1, 0, 0)
 skeleton = Monster((500, 500), images_sprites['skeleton'], 4, 1, 0, 0, 3)
 zombie = Monster((700, 500), images_sprites['zombie'], 4, 1, 0, 0, 3)
