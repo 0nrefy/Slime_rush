@@ -39,8 +39,6 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.rect.move(x, y)
-        self.move_x = random.randrange(-3, 3, 3)
-        self.move_y = random.randrange(-3, 3, 3)
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -109,38 +107,25 @@ class Monster(AnimatedSprite):
         self.rect.x = pos[0]
         self.rect.y = pos[1]
         self.hp = hp
-        self.last_now = datetime.now()
-        self.rotate = True
-        self.left_or_right = False
+        self.last_move = 3
+        self.move_x, self.move_y = 0, 0
 
     def update(self):
         super().update()
-        if self.rotate:
+        if self.rect.x > player.rect.x:
+            self.move_x = -3
+        elif self.rect.x < player.rect.x:
+            self.move_x = 3
+        if self.rect.y > player.rect.y:
+            self.move_y = -3
+        elif self.rect.y < player.rect.y:
+            self.move_y = 3
+        if self.last_move != self.move_x:
             for i in range(len(self.frames)):
                 self.frames[i] = pygame.transform.flip(self.frames[i], True, False)
-            self.rotate = False
-        if self.rect.x + 150 > width:
-            self.move_x = -self.move_x
-            self.rotate = True
-            self.left_or_right = True
-        elif self.rect.x < 0:
-            self.move_x = -self.move_x
-            self.rotate = True
-            self.left_or_right = False
-        if self.rect.y + 150 > height or self.rect.y < 0:
-            self.move_y = -self.move_y
-        if (datetime.now() - self.last_now).seconds > random.randint(1, 3):
-            self.move_x = random.randrange(-3, 3, 3)
-            self.move_y = random.randrange(-3, 3, 3)
-            self.last_now = datetime.now()
-        if self.move_x == -3 and self.left_or_right:
-            self.rotate = True
-            self.left_or_right = False
-        elif self.move_x == 3 and not self.left_or_right:
-            self.rotate = True
-            self.left_or_right = True
         self.rect.x += self.move_x
         self.rect.y += self.move_y
+        self.last_move = self.move_x
 
 
 def terminate():
