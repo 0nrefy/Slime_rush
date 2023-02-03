@@ -130,12 +130,12 @@ class Monster(AnimatedSprite):
         self.rect.x += self.move_x
         self.rect.y += self.move_y
         self.last_move = self.move_x
-        if self.hp < 0:
-            self.remove()
+        if self.hp <= 0:
+            monster_group.remove(self)
+            all_sprites.remove(self)
 
     def damage(self, damage):
-        if player.rect.collidepoint(self.rect.x, self.rect.y):
-            self.hp -= damage
+        self.hp -= damage
 
 
 def terminate():
@@ -237,8 +237,7 @@ rooms = [pygame.transform.scale(load_image('start_screen.png'), screen_size),
 start_screen()
 player = Slime((1920 // 2, 800), images_sprites['player'], 4, 1, 0, 0)
 skeleton = Monster((500, 500), images_sprites['skeleton'], 4, 1, 0, 0, 3)
-zombie = Monster((700, 500), images_sprites['zombie'], 4, 1, 0, 0, 3)
-ratatuy = Monster((900, 500), images_sprites['ratatuy'], 4, 1, 0, 0, 1)
+
 
 running = True
 
@@ -258,8 +257,10 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 for i in monster_group:
-                    if i.rect.collidepoint(player.rect.x, player.rect.y):
-                        i.damage(player.damage + player.artifact['weapon'])
+                    for j in range(150):
+                        if i.rect.collidepoint(player.rect.x + j, player.rect.y + j):
+                            i.damage(player.damage + player.artifact['weapon'])
+                            break
         if event.type == pygame.KEYUP:
             if (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and not left:
                 right = False
