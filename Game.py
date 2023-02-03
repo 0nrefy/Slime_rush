@@ -94,6 +94,10 @@ class Slime(AnimatedSprite):
         self.health = 5
         self.damage = 1
         self.exp = 0
+        self.artifact = {
+            'weapon': 0,
+            'speed': 0,
+        }
 
     def update(self):
         super().update()
@@ -109,29 +113,29 @@ class Monster(AnimatedSprite):
         self.hp = hp
         self.last_move = 0
         self.move_x, self.move_y = 0, 0
-        self.changed = False
 
     def update(self):
         super().update()
         if self.rect.x > player.rect.x:
             self.move_x = -3
-            self.changed = True
         elif self.rect.x < player.rect.x:
             self.move_x = 3
-            self.changed = True
         if self.rect.y > player.rect.y:
             self.move_y = -3
         elif self.rect.y < player.rect.y:
             self.move_y = 3
-        self.rect.x += self.move_x
-        self.rect.y += self.move_y
-        if self.rect.x != player.rect.x:
-            self.changed = False
-        if self.last_move != self.move_x and self.changed:
+        if self.last_move != self.move_x:
             for i in range(len(self.frames)):
                 self.frames[i] = pygame.transform.flip(self.frames[i], True, False)
+        self.rect.x += self.move_x
+        self.rect.y += self.move_y
         self.last_move = self.move_x
+        if self.hp < 0:
+            self.remove()
 
+    def damage(self, damage):
+        if player.rect.collidepoint(self.rect.x, self.rect.y):
+            self.hp -= damage
 
 
 def terminate():
@@ -216,7 +220,6 @@ images_sprites = {
 
 all_sprites = SpriteGroup()
 clock = pygame.time.Clock()
-horizontal_borders = SpriteGroup()
 doors_group = SpriteGroup()
 monster_group = SpriteGroup()
 level_group = SpriteGroup()
@@ -254,7 +257,9 @@ while running:
                 down, up = True, False
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                pass
+                for i in monster_group:
+                    if i.rect.collidepoint(player.rect.x, player.rect.y):
+                        i.damage(player.damage + player.artifact['weapon'])
         if event.type == pygame.KEYUP:
             if (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and not left:
                 right = False
