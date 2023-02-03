@@ -107,25 +107,31 @@ class Monster(AnimatedSprite):
         self.rect.x = pos[0]
         self.rect.y = pos[1]
         self.hp = hp
-        self.last_move = 3
+        self.last_move = 0
         self.move_x, self.move_y = 0, 0
+        self.changed = False
 
     def update(self):
         super().update()
         if self.rect.x > player.rect.x:
             self.move_x = -3
+            self.changed = True
         elif self.rect.x < player.rect.x:
             self.move_x = 3
+            self.changed = True
         if self.rect.y > player.rect.y:
             self.move_y = -3
         elif self.rect.y < player.rect.y:
             self.move_y = 3
-        if self.last_move != self.move_x:
-            for i in range(len(self.frames)):
-                self.frames[i] = pygame.transform.flip(self.frames[i], True, False)
         self.rect.x += self.move_x
         self.rect.y += self.move_y
+        if self.rect.x != player.rect.x:
+            self.changed = False
+        if self.last_move != self.move_x and self.changed:
+            for i in range(len(self.frames)):
+                self.frames[i] = pygame.transform.flip(self.frames[i], True, False)
         self.last_move = self.move_x
+
 
 
 def terminate():
