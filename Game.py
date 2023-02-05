@@ -99,9 +99,16 @@ class Slime(AnimatedSprite):
             'weapon': 0,
             'speed': 0,
         }
+        self.sprite = 'player'
 
     def update(self):
         super().update()
+
+    def change_frames(self, change, rec, columns, rows):
+        self.sprite = change
+        self.frames = []
+        self.cut_sheet(images_sprites[change], columns, rows)
+        self.rect = rec
 
 
 class Monster(AnimatedSprite):
@@ -192,13 +199,13 @@ def move(side):
     global right, left
     global right_w, left_w
     if side == 'right':
-        if left_w and not left:
+        if left_w:
             for i in range(len(player.frames)):
                 player.frames[i] = pygame.transform.flip(player.frames[i], True, False)
         right_w, left_w = True, False
         right, left = True, False
     elif side == 'left':
-        if right_w and not right:
+        if right_w:
             for i in range(len(player.frames)):
                 player.frames[i] = pygame.transform.flip(player.frames[i], True, False)
         right_w, left_w = False, True
@@ -229,7 +236,7 @@ start_screen_group = SpriteGroup()
 right, left = False, False
 right_w, left_w = False, True
 up, down = False, False
-attack = False
+attack, move_animation = False, False
 c_attack = 0
 jump_max = 0
 cur_loc = 0
@@ -242,13 +249,15 @@ rooms = [pygame.transform.scale(load_image('start_screen.png'), screen_size),
 start_screen()
 player = Slime((1920 // 2, 800), images_sprites['player'], 4, 1, 0, 0)
 skeleton = Monster((500, 500), images_sprites['skeleton'], 4, 1, 0, 0, 3)
+zombie = Monster((400, 500), images_sprites['zombie'], 4, 1, 0, 0, 4)
+ratatuy = Monster((300, 500), images_sprites['ratatuy'], 4, 1, 0, 0, 2)
 
 
 running = True
 
 while running:
+    rect = player.rect
     for event in pygame.event.get():
-        rect = player.rect
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
@@ -260,12 +269,9 @@ while running:
                 up, down = True, False
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down, up = True, False
-            if (event.key == pygame.K_DOWN or event.key == pygame.K_s) or \
-                (event.key == pygame.K_UP or event.key == pygame.K_w) or \
-                    (event.key == pygame.K_LEFT or event.key == pygame.K_a) or \
-                    (event.key == pygame.K_RIGHT or event.key == pygame.K_d):
-                player.cut_sheet(images_sprites['player_move'], 4, 1)
-                player.rect = rect
+            if move_animation and player.sprite == 'player':
+                player.change_frames('player_move', rect, 4, 1)
+                move_animation = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 attack = True
@@ -283,6 +289,9 @@ while running:
                 up = False
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down = False
+            if not move_animation and player.sprite == 'player_move':
+                player.change_frames('player', rect, 4, 1)
+                move_animation = True
     if attack:
         c_attack += 1
         if c_attack > 10:
@@ -290,22 +299,22 @@ while running:
             attack = False
     if right and not attack:
         player.rect.x += player.speed
-        if player.rect.x + 150 > width:
+        if player.rect.x + 130 > width:
             if check_level('right'):
                 player.rect.x = 0
             else:
-                player.rect.x -= 7
+                player.rect.x -= player.speed
     elif left and not attack:
         player.rect.x -= player.speed
-        if player.rect.x < 0:
+        if player.rect.x <= -20:
             if check_level('left'):
-                player.rect.x = width - 150
+                player.rect.x = width - 130
             else:
-                player.rect.x += 7
+                player.rect.x += player.speed
     if up and not attack:
         player.rect.y -= player.speed
         if player.rect.y + 150 // 2 < 0:
-            player.rect.y += 7
+            player.rect.y += player.speed
     elif down and not attack:
         player.rect.y += player.speed
         if player.rect.y + 150 > height:
