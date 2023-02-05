@@ -94,6 +94,7 @@ class Slime(AnimatedSprite):
         self.health = 5
         self.damage = 1
         self.exp = 0
+        self.speed = 7
         self.artifact = {
             'weapon': 0,
             'speed': 0,
@@ -191,13 +192,13 @@ def move(side):
     global right, left
     global right_w, left_w
     if side == 'right':
-        if left_w:
+        if left_w and not left:
             for i in range(len(player.frames)):
                 player.frames[i] = pygame.transform.flip(player.frames[i], True, False)
         right_w, left_w = True, False
         right, left = True, False
     elif side == 'left':
-        if right_w:
+        if right_w and not right:
             for i in range(len(player.frames)):
                 player.frames[i] = pygame.transform.flip(player.frames[i], True, False)
         right_w, left_w = False, True
@@ -215,7 +216,8 @@ images_sprites = {
     'skeleton': load_image('Skeleton.png', -1),
     'zombie': load_image('Zombie.png', -1),
     'ratatuy': load_image('ratatuy.png', -1),
-    'button': load_image('button.png', -1)
+    'button': load_image('button.png', -1),
+    'player_move': load_image('Slime_move.png', -1)
 }
 
 all_sprites = SpriteGroup()
@@ -225,10 +227,13 @@ monster_group = SpriteGroup()
 level_group = SpriteGroup()
 start_screen_group = SpriteGroup()
 right, left = False, False
-right_w, left_w = True, False
+right_w, left_w = False, True
 up, down = False, False
+attack = False
+c_attack = 0
 jump_max = 0
 cur_loc = 0
+count_moves = 0
 rooms = [pygame.transform.scale(load_image('start_screen.png'), screen_size),
          pygame.transform.scale(load_image('level_2.png'), screen_size),
          pygame.transform.scale(load_image('level_3.png'), screen_size)]
@@ -243,6 +248,7 @@ running = True
 
 while running:
     for event in pygame.event.get():
+        rect = player.rect
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
@@ -254,8 +260,15 @@ while running:
                 up, down = True, False
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down, up = True, False
+            if (event.key == pygame.K_DOWN or event.key == pygame.K_s) or \
+                (event.key == pygame.K_UP or event.key == pygame.K_w) or \
+                    (event.key == pygame.K_LEFT or event.key == pygame.K_a) or \
+                    (event.key == pygame.K_RIGHT or event.key == pygame.K_d):
+                player.cut_sheet(images_sprites['player_move'], 4, 1)
+                player.rect = rect
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
+                attack = True
                 for i in monster_group:
                     for j in range(150):
                         if i.rect.collidepoint(player.rect.x + j, player.rect.y + j):
@@ -270,28 +283,34 @@ while running:
                 up = False
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down = False
-    if right:
-        player.rect.x += 7
+    if attack:
+        c_attack += 1
+        if c_attack > 10:
+            c_attack = 0
+            attack = False
+    if right and not attack:
+        player.rect.x += player.speed
         if player.rect.x + 150 > width:
             if check_level('right'):
                 player.rect.x = 0
             else:
                 player.rect.x -= 7
-    elif left:
-        player.rect.x -= 7
+    elif left and not attack:
+        player.rect.x -= player.speed
         if player.rect.x < 0:
             if check_level('left'):
                 player.rect.x = width - 150
             else:
                 player.rect.x += 7
-    if up:
-        player.rect.y -= 7
+    if up and not attack:
+        player.rect.y -= player.speed
         if player.rect.y + 150 // 2 < 0:
             player.rect.y += 7
-    elif down:
-        player.rect.y += 7
+    elif down and not attack:
+        player.rect.y += player.speed
         if player.rect.y + 150 > height:
             player.rect.y = height - 150
+    count_moves = 0
     fon = rooms[cur_loc]
     screen.blit(fon, (0, 0))
     all_sprites.draw(screen)
