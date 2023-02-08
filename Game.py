@@ -46,7 +46,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
         for j in range(rows):
             for i in range(columns):
                 frame_location = (self.rect.w * i, self.rect.h * j)
-                for _ in range(0, 64 // self.col * self.row):
+                for _ in range(0, 60 // self.col * self.row):
                     self.frames.append(pygame.transform.scale(sheet.subsurface(pygame.Rect(
                         frame_location, self.rect.size)), (150, 150)).convert_alpha())
 
@@ -99,16 +99,9 @@ class Slime(AnimatedSprite):
             'weapon': 0,
             'speed': 0,
         }
-        self.sprite = 'player'
 
     def update(self):
         super().update()
-
-    def change_frames(self, change, rec, columns, rows):
-        self.sprite = change
-        self.frames = []
-        self.cut_sheet(images_sprites[change], columns, rows)
-        self.rect = rec
 
 
 class Monster(AnimatedSprite):
@@ -121,6 +114,9 @@ class Monster(AnimatedSprite):
         self.hp = hp
         self.last_move = 0
         self.move_x, self.move_y = 0, 0
+        self.attack = False
+        self.attack_c = False
+        self.changed = False
 
     def update(self):
         super().update()
@@ -132,12 +128,26 @@ class Monster(AnimatedSprite):
             self.move_y = -3
         elif self.rect.y < player.rect.y:
             self.move_y = 3
+        if pygame.sprite.collide_mask(self, player):
+            self.attack = True
+            if not self.changed:
+                self.changed = True
+                pass
         if self.last_move != self.move_x:
             for i in range(len(self.frames)):
                 self.frames[i] = pygame.transform.flip(self.frames[i], True, False)
-        self.rect.x += self.move_x
-        self.rect.y += self.move_y
+        if not self.attack:
+            self.rect.x += self.move_x
+            self.rect.y += self.move_y
         self.last_move = self.move_x
+        if self.attack_c >= 100:
+            self.attack = False
+            self.changed = True
+            self.attack_c = 0
+        elif self.attack_c == 50:
+            if pygame.sprite.collide_mask(self, player):
+                player.health -= 1
+        self.attack_c += 1
         if self.hp <= 0:
             monster_group.remove(self)
             all_sprites.remove(self)
@@ -215,7 +225,7 @@ def move(side):
 pygame.init()
 screen_size = width, height = (1920, 1080)
 screen = pygame.display.set_mode(screen_size)
-pygame.display.set_caption('Slime rush')
+pygame.display.set_caption('Slime Rush')
 FPS = 60
 
 images_sprites = {
@@ -224,7 +234,8 @@ images_sprites = {
     'zombie': load_image('Zombie.png', -1),
     'ratatuy': load_image('ratatuy.png', -1),
     'button': load_image('button.png', -1),
-    'player_move': load_image('Slime_move.png', -1)
+    'player_attack': load_image('slime_attack.png', -1),
+    'map': pygame.transform.scale(load_image('map.png', -1), (1920, 1080))
 }
 
 all_sprites = SpriteGroup()
@@ -236,21 +247,19 @@ start_screen_group = SpriteGroup()
 right, left = False, False
 right_w, left_w = False, True
 up, down = False, False
-attack, move_animation = False, False
+attack = False
 c_attack = 0
 jump_max = 0
 cur_loc = 0
 count_moves = 0
-rooms = [pygame.transform.scale(load_image('start_screen.png'), screen_size),
-         pygame.transform.scale(load_image('level_2.png'), screen_size),
-         pygame.transform.scale(load_image('level_3.png'), screen_size)]
 
 
 start_screen()
-player = Slime((1920 // 2, 800), images_sprites['player'], 4, 1, 0, 0)
+player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
 skeleton = Monster((500, 500), images_sprites['skeleton'], 4, 1, 0, 0, 3)
 zombie = Monster((400, 500), images_sprites['zombie'], 4, 1, 0, 0, 4)
 ratatuy = Monster((300, 500), images_sprites['ratatuy'], 4, 1, 0, 0, 2)
+rooms = [1, 1, 1]
 
 
 running = True
@@ -269,12 +278,15 @@ while running:
                 up, down = True, False
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down, up = True, False
-            if move_animation and player.sprite == 'player':
-                player.change_frames('player_move', rect, 4, 1)
-                move_animation = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
+            if event.button == 1 and not attack:
                 attack = True
+                player.frames = []
+                player.cut_sheet(images_sprites['player_attack'], 6, 1)
+                player.rect = rect
+                if left_w:
+                    for i in range(len(player.frames)):
+                        player.frames[i] = pygame.transform.flip(player.frames[i], True, False)
                 for i in monster_group:
                     for j in range(150):
                         if i.rect.collidepoint(player.rect.x + j, player.rect.y + j):
@@ -289,14 +301,14 @@ while running:
                 up = False
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down = False
-            if not move_animation and player.sprite == 'player_move':
-                player.change_frames('player', rect, 4, 1)
-                move_animation = True
     if attack:
         c_attack += 1
-        if c_attack > 10:
+        if c_attack > 20:
             c_attack = 0
             attack = False
+            player.frames = []
+            player.cut_sheet(images_sprites['player'], 4, 1)
+            player.rect = rect
     if right and not attack:
         player.rect.x += player.speed
         if player.rect.x + 130 > width:
@@ -319,9 +331,7 @@ while running:
         player.rect.y += player.speed
         if player.rect.y + 150 > height:
             player.rect.y = height - 150
-    count_moves = 0
-    fon = rooms[cur_loc]
-    screen.blit(fon, (0, 0))
+    screen.blit(images_sprites['map'], (0, 0))
     all_sprites.draw(screen)
     all_sprites.update()
     pygame.display.flip()
