@@ -50,12 +50,6 @@ class AnimatedSprite(pygame.sprite.Sprite):
                     self.frames.append(pygame.transform.scale(sheet.subsurface(pygame.Rect(
                         frame_location, self.rect.size)), (150, 150)).convert_alpha())
 
-    def get_frames(self):
-        return self.frames
-
-    def set_frames(self, new_frames):
-        self.frames = new_frames
-
     def update(self):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
@@ -99,9 +93,18 @@ class Slime(AnimatedSprite):
             'weapon': 0,
             'speed': 0,
         }
+        self.max_hp = 5
 
     def update(self):
         super().update()
+        for _ in range(self.max_hp * 64, 64):
+            heart = Sprite(heart_group)
+            heart.rect.x, heart.rect.y = 1920 - j, 0
+            all_sprites.add(heart)
+            if _ // 64 < self.max_hp:
+                heart.image = images_sprites['break_heart']
+            else:
+                heart.image = images_sprites['heart']
 
 
 class Monster(AnimatedSprite):
@@ -235,9 +238,12 @@ images_sprites = {
     'ratatuy': load_image('ratatuy.png', -1),
     'button': load_image('button.png', -1),
     'player_attack': load_image('slime_attack.png', -1),
-    'map': pygame.transform.scale(load_image('map.png', -1), (1920, 1080))
+    'map': pygame.transform.scale(load_image('map.png', -1), (1920, 1080)),
+    'heart': pygame.transform.scale(load_image('heart.png', -1), (32, 32)),
+    'break_heart': pygame.transform.scale(load_image('heart (1).png', -1), (64, 64))
 }
 
+heart_group = SpriteGroup()
 all_sprites = SpriteGroup()
 clock = pygame.time.Clock()
 doors_group = SpriteGroup()
