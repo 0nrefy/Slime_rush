@@ -240,6 +240,14 @@ def check_level(side):
         return False
 
 
+def generate_hearts():
+    global hearts
+    hearts = []
+    for _ in range(1, player.max_hp + 1):
+        heart = Heart((1920 - 128 * _, 0), images_sprites['heart'])
+        hearts.append(heart)
+
+
 def move(side):
     global right, left
     global right_w, left_w
@@ -289,18 +297,16 @@ c_attack = 0
 jump_max = 0
 cur_loc = 0
 count_moves = 0
+hearts = []
 
 start_screen()
 player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
 skeleton = Monster((500, 500), images_sprites['skeleton'], 4, 1, 0, 0, 3)
 zombie = Monster((400, 500), images_sprites['zombie'], 4, 1, 0, 0, 4)
 ratatuy = Monster((300, 500), images_sprites['ratatuy'], 4, 1, 0, 0, 2)
-hearts = []
-for i in range(1, 6):
-    heart = Heart((1920 - 128 * i, 0), images_sprites['heart'])
-    hearts.append(heart)
-rooms = [1, 1, 1]
+generate_hearts()
 
+rooms = [1, 1, 1]
 running = True
 
 while running:
