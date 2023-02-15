@@ -1,6 +1,3 @@
-import random
-from datetime import datetime
-
 import pygame
 import sys
 import os
@@ -60,22 +57,29 @@ class Sprite(pygame.sprite.Sprite):
         super().__init__(group)
         self.rect = None
 
-    def get_event(self, event):
-        pass
 
-
-class Tile(Sprite):
-    def __init__(self, pos, size):
+class Heart(Sprite):
+    def __init__(self, pos, image):
         super().__init__(all_sprites)
-        self.image = pygame.Surface(size)
-        self.image.fill(pygame.Color('grey'))
+        self.image = images_sprites['heart']
+        self.rect = self.image.get_rect()
         self.rect.x = pos[0]
         self.rect.y = pos[1]
 
+    def update(self):
+        super().update()
 
-class Level(Sprite):
-    def __init__(self):
-        super().__init__(level_group)
+
+class Text_button(Sprite):
+    def __init__(self, group, pos, image):
+        super().__init__(group)
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+
+    def update(self):
+        super().update()
 
 
 class Slime(AnimatedSprite):
@@ -84,7 +88,6 @@ class Slime(AnimatedSprite):
         self.rect = self.image.get_rect()
         self.rect.x = pos[0]
         self.rect.y = pos[1]
-        self.jump_value = 20
         self.health = 5
         self.damage = 1
         self.exp = 0
@@ -97,14 +100,6 @@ class Slime(AnimatedSprite):
 
     def update(self):
         super().update()
-        for _ in range(self.max_hp * 64, 64):
-            heart = Sprite(heart_group)
-            heart.rect.x, heart.rect.y = 1920 - j, 0
-            all_sprites.add(heart)
-            if _ // 64 < self.max_hp:
-                heart.image = images_sprites['break_heart']
-            else:
-                heart.image = images_sprites['heart']
 
 
 class Monster(AnimatedSprite):
@@ -123,6 +118,7 @@ class Monster(AnimatedSprite):
 
     def update(self):
         super().update()
+        global hearts
         if self.rect.x > player.rect.x:
             self.move_x = -3
         elif self.rect.x < player.rect.x:
@@ -147,6 +143,17 @@ class Monster(AnimatedSprite):
             self.attack = False
             self.changed = True
             self.attack_c = 0
+            if player.max_hp != player.health:
+                if player.health >= 0:
+                    try:
+                        for _ in range(player.max_hp - player.health):
+                            if _ == 0:
+                                index = -1
+                            else:
+                                index = -_
+                            hearts[index].image = images_sprites['break_heart']
+                    except Exception:
+                        pass
         elif self.attack_c == 50:
             if pygame.sprite.collide_mask(self, player):
                 player.health -= 1
@@ -165,6 +172,31 @@ def terminate():
 
 
 def start_screen():
+    intro_text = [load_image('Slime_rush.png', -1), load_image('button.png', -1)]
+    fon = pygame.transform.scale(load_image('start_image.png'), screen_size)
+    screen.blit(fon, (0, 0))
+    text = Sprite(start_screen_group)
+    text.image = intro_text[0]
+    text.image = pygame.transform.scale(text.image, (1500, 500)).convert_alpha()
+    text.rect = (width // 9, height // 7)
+    text2 = Sprite(start_screen_group)
+    text2.image = intro_text[1]
+    text2.image = pygame.transform.scale(text2.image, (1000, 250)).convert_alpha()
+    text2.rect = (width // 4, height // 1.5)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        start_screen_group.draw(screen)
+        start_screen_group.update()
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def over_screen():
     intro_text = [load_image('Slime_rush.png', -1), load_image('button.png', -1)]
     fon = pygame.transform.scale(load_image('start_image.png'), screen_size)
     screen.blit(fon, (0, 0))
@@ -239,8 +271,8 @@ images_sprites = {
     'button': load_image('button.png', -1),
     'player_attack': load_image('slime_attack.png', -1),
     'map': pygame.transform.scale(load_image('map.png', -1), (1920, 1080)),
-    'heart': pygame.transform.scale(load_image('heart.png', -1), (32, 32)),
-    'break_heart': pygame.transform.scale(load_image('heart (1).png', -1), (64, 64))
+    'heart': pygame.transform.scale(load_image('heart.png', -1), (128, 128)).convert_alpha(),
+    'break_heart': pygame.transform.scale(load_image('heart (1).png', -1), (128, 128)).convert_alpha()
 }
 
 heart_group = SpriteGroup()
@@ -248,7 +280,6 @@ all_sprites = SpriteGroup()
 clock = pygame.time.Clock()
 doors_group = SpriteGroup()
 monster_group = SpriteGroup()
-level_group = SpriteGroup()
 start_screen_group = SpriteGroup()
 right, left = False, False
 right_w, left_w = False, True
@@ -259,14 +290,16 @@ jump_max = 0
 cur_loc = 0
 count_moves = 0
 
-
 start_screen()
 player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
 skeleton = Monster((500, 500), images_sprites['skeleton'], 4, 1, 0, 0, 3)
 zombie = Monster((400, 500), images_sprites['zombie'], 4, 1, 0, 0, 4)
 ratatuy = Monster((300, 500), images_sprites['ratatuy'], 4, 1, 0, 0, 2)
+hearts = []
+for i in range(1, 6):
+    heart = Heart((1920 - 128 * i, 0), images_sprites['heart'])
+    hearts.append(heart)
 rooms = [1, 1, 1]
-
 
 running = True
 
@@ -315,25 +348,25 @@ while running:
             player.frames = []
             player.cut_sheet(images_sprites['player'], 4, 1)
             player.rect = rect
-    if right and not attack:
+    if right:
         player.rect.x += player.speed
         if player.rect.x + 130 > width:
             if check_level('right'):
                 player.rect.x = 0
             else:
                 player.rect.x -= player.speed
-    elif left and not attack:
+    elif left:
         player.rect.x -= player.speed
         if player.rect.x <= -20:
             if check_level('left'):
                 player.rect.x = width - 130
             else:
                 player.rect.x += player.speed
-    if up and not attack:
+    if up:
         player.rect.y -= player.speed
         if player.rect.y + 150 // 2 < 0:
             player.rect.y += player.speed
-    elif down and not attack:
+    elif down:
         player.rect.y += player.speed
         if player.rect.y + 150 > height:
             player.rect.y = height - 150
