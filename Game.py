@@ -1,3 +1,5 @@
+import random
+
 import pygame
 import sys
 import os
@@ -59,7 +61,7 @@ class Sprite(pygame.sprite.Sprite):
 
 
 class Heart(Sprite):
-    def __init__(self, pos, image):
+    def __init__(self, pos):
         super().__init__(all_sprites)
         self.image = images_sprites['heart']
         self.rect = self.image.get_rect()
@@ -70,16 +72,26 @@ class Heart(Sprite):
         super().update()
 
 
-class Text_button(Sprite):
+class Button(Sprite):
     def __init__(self, group, pos, image):
         super().__init__(group)
         self.image = image
         self.rect = self.image.get_rect()
+        self.width = int(self.rect.w)
+        self.height = int(self.rect.h)
         self.rect.x = pos[0]
         self.rect.y = pos[1]
+        self.pressed = False
 
     def update(self):
         super().update()
+        x, y = pygame.mouse.get_pos()
+        if self.rect.x <= x <= self.rect.x + self.width and self.rect.y <= y <= self.rect.y + self.height:
+            self.image = images_sprites['pressed_button']
+            self.pressed = True
+        else:
+            self.image = images_sprites['not_pressed_button']
+            self.pressed = False
 
 
 class Slime(AnimatedSprite):
@@ -166,30 +178,42 @@ class Monster(AnimatedSprite):
         self.hp -= damage
 
 
+class Room:
+    def __init__(self):
+        self.mobs = random.randint(3, 6)
+        self.checked = False
+
+
 def terminate():
     pygame.quit()
     sys.exit()
 
 
 def start_screen():
-    intro_text = [load_image('Slime_rush.png', -1), load_image('button.png', -1)]
     fon = pygame.transform.scale(load_image('start_image.png'), screen_size)
     screen.blit(fon, (0, 0))
-    text = Sprite(start_screen_group)
-    text.image = intro_text[0]
-    text.image = pygame.transform.scale(text.image, (1500, 500)).convert_alpha()
-    text.rect = (width // 9, height // 7)
-    text2 = Sprite(start_screen_group)
-    text2.image = intro_text[1]
-    text2.image = pygame.transform.scale(text2.image, (1000, 250)).convert_alpha()
-    text2.rect = (width // 4, height // 1.5)
+    slime_rush = Sprite(start_screen_group)
+    slime_rush.image = load_image('Slime_rush.png', -1)
+    slime_rush.image = pygame.transform.scale(slime_rush.image, (1500, 500)).convert_alpha()
+    slime_rush.rect = (width // 9, height // 7)
+    button = Button(start_screen_group, (width // 2.5, height // 1.5), images_sprites['not_pressed_button'])
+    button_exit = Button(start_screen_group, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'])
+    font = pygame.font.SysFont("comicsans", 30)
+    text = font.render('Начать игру', True, (255, 255, 255))
+    text2 = font.render('Выйти', True, (255, 255, 255))
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN or \
-                    event.type == pygame.MOUSEBUTTONDOWN:
-                return
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if button.pressed and event.button == 1:
+                    return
+                elif button_exit.pressed and event.button == 1:
+                    terminate()
+        button.image.blit(text, (button.image.get_rect().w // 3.5, button.image.get_rect().h // 4))
+        button_exit.image.blit(text2, (button_exit.image.get_rect().w // 3.5,
+                                       button_exit.image.get_rect().h // 4))
+        screen.blit(fon, screen_size)
         start_screen_group.draw(screen)
         start_screen_group.update()
         pygame.display.flip()
@@ -204,10 +228,7 @@ def over_screen():
     text.image = intro_text[0]
     text.image = pygame.transform.scale(text.image, (1500, 500)).convert_alpha()
     text.rect = (width // 9, height // 7)
-    text2 = Sprite(start_screen_group)
-    text2.image = intro_text[1]
-    text2.image = pygame.transform.scale(text2.image, (1000, 250)).convert_alpha()
-    text2.rect = (width // 4, height // 1.5)
+    button = Button(start_screen_group, (width // 9, height // 5), images_sprites['not_pressed_button'])
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -223,28 +244,38 @@ def over_screen():
 
 def check_level(side):
     global cur_loc
-    try:
-        c_loc = cur_loc
-        if side == 'right':
-            c_loc += 1
-            loc = rooms[c_loc]
-        if side == 'left':
-            c_loc -= 1
-            if c_loc >= 0:
+    if not monster_group:
+        rooms[cur_loc] = False
+    if not rooms[cur_loc]:
+        try:
+            c_loc = cur_loc
+            if side == 'right':
+                c_loc += 1
                 loc = rooms[c_loc]
-            else:
-                raise IndexError
-        cur_loc = c_loc
-        return True
-    except IndexError:
-        return False
+            if side == 'left':
+                c_loc -= 1
+                if c_loc >= 0:
+                    loc = rooms[c_loc]
+                else:
+                    raise IndexError
+            cur_loc = c_loc
+            if rooms[c_loc] == 'over':
+                monster = Monster((1920 - 500, 1080 - 300), images_sprites['boss'], 4, 1, 0, 0, 10)
+            elif rooms[c_loc]:
+                for i in range(random.randint(0, 6)):
+                    monster = Monster((random.randint(400, 1920), random.randint(200, 980)),
+                                      images_sprites[random.choice(['ratatuy', 'skeleton', 'zombie'])], 4, 1, 0, 0,
+                                      random.randint(0, 6))
+            return True
+        except IndexError:
+            return False
 
 
 def generate_hearts():
     global hearts
     hearts = []
     for _ in range(1, player.max_hp + 1):
-        heart = Heart((1920 - 128 * _, 0), images_sprites['heart'])
+        heart = Heart((1915 - 128 * _, 0))
         hearts.append(heart)
 
 
@@ -276,13 +307,17 @@ images_sprites = {
     'skeleton': load_image('Skeleton.png', -1),
     'zombie': load_image('Zombie.png', -1),
     'ratatuy': load_image('ratatuy.png', -1),
-    'button': load_image('button.png', -1),
     'player_attack': load_image('slime_attack.png', -1),
     'map': pygame.transform.scale(load_image('map.png', -1), (1920, 1080)),
     'heart': pygame.transform.scale(load_image('heart.png', -1), (128, 128)).convert_alpha(),
-    'break_heart': pygame.transform.scale(load_image('heart (1).png', -1), (128, 128)).convert_alpha()
+    'break_heart': pygame.transform.scale(load_image('heart_broken.png', -1), (128, 128)).convert_alpha(),
+    'not_pressed_button': pygame.transform.scale(load_image('not_pressed_button.png', -1), (384, 96)).convert_alpha(),
+    'pressed_button': pygame.transform.scale(load_image('pressed_button.png', -1), (384, 96)).convert_alpha(),
+    'boss': pygame.transform.scale(load_image('Boss_slime.png', -1), (512, 512)).convert_alpha(),
+    'boss_attacking': pygame.transform.scale(load_image('Boss_slime_attack.png', -1), (512, 512)).convert_alpha()
 }
 
+button_group = SpriteGroup()
 heart_group = SpriteGroup()
 all_sprites = SpriteGroup()
 clock = pygame.time.Clock()
@@ -294,19 +329,14 @@ right_w, left_w = False, True
 up, down = False, False
 attack = False
 c_attack = 0
-jump_max = 0
 cur_loc = 0
-count_moves = 0
 hearts = []
 
 start_screen()
 player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
-skeleton = Monster((500, 500), images_sprites['skeleton'], 4, 1, 0, 0, 3)
-zombie = Monster((400, 500), images_sprites['zombie'], 4, 1, 0, 0, 4)
-ratatuy = Monster((300, 500), images_sprites['ratatuy'], 4, 1, 0, 0, 2)
 generate_hearts()
 
-rooms = [1, 1, 1]
+rooms = [False, True, True, 'over']
 running = True
 
 while running:
@@ -346,6 +376,9 @@ while running:
                 up = False
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down = False
+    if player.health <= 0:
+        for i in monster_group:
+            i.remove()
     if attack:
         c_attack += 1
         if c_attack > 20:
