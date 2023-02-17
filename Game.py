@@ -221,23 +221,26 @@ def start_screen():
 
 
 def over_screen():
-    intro_text = [load_image('Slime_rush.png', -1), load_image('button.png', -1)]
-    fon = pygame.transform.scale(load_image('start_image.png'), screen_size)
+    fon = pygame.transform.scale(load_image('map.png'), screen_size)
     screen.blit(fon, (0, 0))
-    text = Sprite(start_screen_group)
-    text.image = intro_text[0]
-    text.image = pygame.transform.scale(text.image, (1500, 500)).convert_alpha()
-    text.rect = (width // 9, height // 7)
-    button = Button(start_screen_group, (width // 9, height // 5), images_sprites['not_pressed_button'])
+    text = Sprite(over_screen_group)
+    text.image = pygame.transform.scale(load_image('Game_over.png', -1), (500, 500)).convert_alpha()
+    text.rect = (width // 2.6, height // 7)
+    button = Button(over_screen_group, (width // 2.5, height // 1.5), images_sprites['not_pressed_button'])
+    button_exit = Button(button_group, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'])
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN or \
-                    event.type == pygame.MOUSEBUTTONDOWN:
-                return
-        start_screen_group.draw(screen)
-        start_screen_group.update()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if button.pressed and event.button == 1:
+                    return
+                elif button_exit.pressed and event.button == 1:
+                    terminate()
+        button_group.draw(screen)
+        button_group.update()
+        over_screen_group.draw(screen)
+        over_screen_group.update()
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -262,10 +265,10 @@ def check_level(side):
             if rooms[c_loc] == 'over':
                 monster = Monster((1920 - 500, 1080 - 300), images_sprites['boss'], 4, 1, 0, 0, 10)
             elif rooms[c_loc]:
-                for i in range(random.randint(0, 6)):
+                for i in range(random.randint(1, 6)):
                     monster = Monster((random.randint(400, 1920), random.randint(200, 980)),
                                       images_sprites[random.choice(['ratatuy', 'skeleton', 'zombie'])], 4, 1, 0, 0,
-                                      random.randint(0, 6))
+                                      random.randint(1, 6))
             return True
         except IndexError:
             return False
@@ -316,14 +319,13 @@ images_sprites = {
     'boss': pygame.transform.scale(load_image('Boss_slime.png', -1), (512, 512)).convert_alpha(),
     'boss_attacking': pygame.transform.scale(load_image('Boss_slime_attack.png', -1), (512, 512)).convert_alpha()
 }
-
+start_screen_group = SpriteGroup()
+over_screen_group = SpriteGroup()
+clock = pygame.time.Clock()
 button_group = SpriteGroup()
 heart_group = SpriteGroup()
 all_sprites = SpriteGroup()
-clock = pygame.time.Clock()
-doors_group = SpriteGroup()
 monster_group = SpriteGroup()
-start_screen_group = SpriteGroup()
 right, left = False, False
 right_w, left_w = False, True
 up, down = False, False
@@ -377,8 +379,23 @@ while running:
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down = False
     if player.health <= 0:
-        for i in monster_group:
-            i.remove()
+        over_screen()
+        button_group = SpriteGroup()
+        heart_group = SpriteGroup()
+        all_sprites = SpriteGroup()
+        monster_group = SpriteGroup()
+        right, left = False, False
+        right_w, left_w = False, True
+        up, down = False, False
+        attack = False
+        c_attack = 0
+        cur_loc = 0
+        hearts = []
+        player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
+        generate_hearts()
+
+        rooms = [False, True, True, 'over']
+        running = True
     if attack:
         c_attack += 1
         if c_attack > 20:
