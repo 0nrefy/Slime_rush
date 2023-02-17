@@ -113,7 +113,7 @@ class Monster(AnimatedSprite):
     def __init__(self, pos, sheet, columns, rows, x, y, hp, attack_sheet, co_attack, r_attack):
         super().__init__(all_sprites, sheet, columns, rows, x, y)
         self.add(monster_group)
-        self.image = sheet
+        self.image_walk = sheet
         self.attack_image = attack_sheet
         self.rect = self.image.get_rect()
         self.rect.x = pos[0]
@@ -124,8 +124,8 @@ class Monster(AnimatedSprite):
         self.last_move = 0
         self.move_x, self.move_y = 0, 0
         self.attack = False
-        self.attack_c = False
-        self.changed = False
+        self.attack_c = 0
+        self.l_r = False
 
     def update(self):
         super().update()
@@ -138,24 +138,22 @@ class Monster(AnimatedSprite):
             self.move_y = -3
         elif self.rect.y < player.rect.y:
             self.move_y = 3
-        if pygame.sprite.collide_mask(self, player):
-            self.attack = True
-            self.update_frames()
-            if not self.changed:
-                self.changed = True
-                pass
         if self.last_move != self.move_x:
+            self.l_r = not self.l_r
             for i in range(len(self.frames)):
                 self.frames[i] = pygame.transform.flip(self.frames[i], True, False)
+        if pygame.sprite.collide_mask(self, player):
+            self.attack = True
         if not self.attack:
             self.rect.x += self.move_x
             self.rect.y += self.move_y
+        else:
+            self.attack_c += 1
         self.last_move = self.move_x
-        if self.attack_c >= 100:
-            self.update_frames()
+        if self.attack_c >= 80:
             self.attack = False
-            self.changed = True
             self.attack_c = 0
+            self.update_frames()
             if player.max_hp != player.health:
                 if player.health >= 0:
                     try:
@@ -170,7 +168,7 @@ class Monster(AnimatedSprite):
         elif self.attack_c == 50:
             if pygame.sprite.collide_mask(self, player):
                 player.health -= 1
-        self.attack_c += 1
+            self.update_frames()
         if self.hp <= 0:
             monster_group.remove(self)
             all_sprites.remove(self)
@@ -179,11 +177,19 @@ class Monster(AnimatedSprite):
         self.hp -= damage
 
     def update_frames(self):
+        rect = self.rect
         self.frames = []
         if self.attack:
             self.cut_sheet(self.attack_image, self.columns_attack, self.rows_attack)
+            if self.l_r:
+                for i in range(len(self.frames)):
+                    self.frames[i] = pygame.transform.flip(self.frames[i], True, False)
         else:
-            self.cut_sheet(self.image, self.columns, self.rows)
+            self.cut_sheet(self.image_walk, self.columns, self.rows)
+            if self.l_r:
+                for i in range(len(self.frames)):
+                    self.frames[i] = pygame.transform.flip(self.frames[i], True, False)
+        self.rect = rect
 
 
 class Room:
@@ -228,11 +234,11 @@ def start_screen():
         clock.tick(FPS)
 
 
-def over_screen():
+def over_screen(img):
     fon = pygame.transform.scale(load_image('map.png'), screen_size)
     screen.blit(fon, (0, 0))
     text = Sprite(over_screen_group)
-    text.image = pygame.transform.scale(load_image('Game_over.png', -1), (500, 500)).convert_alpha()
+    text.image = pygame.transform.scale(load_image(img, -1), (500, 500)).convert_alpha()
     text.rect = (width // 2.6, height // 7)
     button = Button(over_screen_group, (width // 2.5, height // 1.5), images_sprites['not_pressed_button'])
     button_exit = Button(button_group, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'])
@@ -384,7 +390,7 @@ while running:
                 for i in monster_group:
                     for j in range(150):
                         if i.rect.collidepoint(player.rect.x + j, player.rect.y + j):
-                            i.damage(player.damage + player.artifact['weapon'])
+                            i.damage(player.damage)
                             break
         if event.type == pygame.KEYUP:
             if (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and not left:
@@ -396,7 +402,7 @@ while running:
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down = False
     if player.health <= 0:
-        over_screen()
+        over_screen('Game_over.png')
         button_group = SpriteGroup()
         heart_group = SpriteGroup()
         all_sprites = SpriteGroup()
@@ -413,6 +419,8 @@ while running:
 
         rooms = [False, True, True, 'over']
         running = True
+    if rooms[cur_loc] == 'over' and not monster_group:
+        over_screen('Win.png')
     if attack:
         c_attack += 1
         if c_attack > 20:
