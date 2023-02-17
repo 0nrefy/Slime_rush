@@ -102,12 +102,7 @@ class Slime(AnimatedSprite):
         self.rect.y = pos[1]
         self.health = 5
         self.damage = 1
-        self.exp = 0
         self.speed = 7
-        self.artifact = {
-            'weapon': 0,
-            'speed': 0,
-        }
         self.max_hp = 5
 
     def update(self):
@@ -115,12 +110,16 @@ class Slime(AnimatedSprite):
 
 
 class Monster(AnimatedSprite):
-    def __init__(self, pos, sheet, columns, rows, x, y, hp):
+    def __init__(self, pos, sheet, columns, rows, x, y, hp, attack_sheet, co_attack, r_attack):
         super().__init__(all_sprites, sheet, columns, rows, x, y)
         self.add(monster_group)
+        self.image = sheet
+        self.attack_image = attack_sheet
         self.rect = self.image.get_rect()
         self.rect.x = pos[0]
         self.rect.y = pos[1]
+        self.columns, self.rows = columns, rows
+        self.columns_attack, self.rows_attack = co_attack, r_attack
         self.hp = hp
         self.last_move = 0
         self.move_x, self.move_y = 0, 0
@@ -141,6 +140,7 @@ class Monster(AnimatedSprite):
             self.move_y = 3
         if pygame.sprite.collide_mask(self, player):
             self.attack = True
+            self.update_frames()
             if not self.changed:
                 self.changed = True
                 pass
@@ -152,6 +152,7 @@ class Monster(AnimatedSprite):
             self.rect.y += self.move_y
         self.last_move = self.move_x
         if self.attack_c >= 100:
+            self.update_frames()
             self.attack = False
             self.changed = True
             self.attack_c = 0
@@ -176,6 +177,13 @@ class Monster(AnimatedSprite):
 
     def damage(self, damage):
         self.hp -= damage
+
+    def update_frames(self):
+        self.frames = []
+        if self.attack:
+            self.cut_sheet(self.attack_image, self.columns_attack, self.rows_attack)
+        else:
+            self.cut_sheet(self.image, self.columns, self.rows)
 
 
 class Room:
@@ -263,12 +271,18 @@ def check_level(side):
                     raise IndexError
             cur_loc = c_loc
             if rooms[c_loc] == 'over':
-                monster = Monster((1920 - 500, 1080 - 300), images_sprites['boss'], 4, 1, 0, 0, 10)
+                monster = Monster((1920 - 500, 1080 - 300), images_sprites['boss'], 4, 1, 0, 0, 10,
+                                  images_sprites['boss_attacking'], 6, 1)
             elif rooms[c_loc]:
                 for i in range(random.randint(1, 6)):
+                    mob = random.choice(['ratatuy', 'skeleton', 'zombie'])
+                    if mob == 'zombie':
+                        c, r = 5, 1
+                    else:
+                        c, r = 4, 1
                     monster = Monster((random.randint(400, 1920), random.randint(200, 980)),
-                                      images_sprites[random.choice(['ratatuy', 'skeleton', 'zombie'])], 4, 1, 0, 0,
-                                      random.randint(1, 6))
+                                      images_sprites[mob], 4, 1, 0, 0,
+                                      random.randint(1, 6), images_sprites[f'{mob}_attacking'], c, r)
             return True
         except IndexError:
             return False
@@ -317,7 +331,10 @@ images_sprites = {
     'not_pressed_button': pygame.transform.scale(load_image('not_pressed_button.png', -1), (384, 96)).convert_alpha(),
     'pressed_button': pygame.transform.scale(load_image('pressed_button.png', -1), (384, 96)).convert_alpha(),
     'boss': pygame.transform.scale(load_image('Boss_slime.png', -1), (512, 512)).convert_alpha(),
-    'boss_attacking': pygame.transform.scale(load_image('Boss_slime_attack.png', -1), (512, 512)).convert_alpha()
+    'boss_attacking': pygame.transform.scale(load_image('Boss_slime_attack.png', -1), (512, 512)).convert_alpha(),
+    'zombie_attacking': load_image('Zombie_attack.png', -1),
+    'skeleton_attacking': load_image('Skeleton_attack.png', -1),
+    'ratatuy_attacking': load_image('ratatuy_attack.png', -1)
 }
 start_screen_group = SpriteGroup()
 over_screen_group = SpriteGroup()
