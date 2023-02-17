@@ -203,6 +203,7 @@ def terminate():
 
 
 def start_screen():
+    pygame.mixer.music.stop()
     fon = pygame.transform.scale(load_image('start_image.png'), screen_size)
     screen.blit(fon, (0, 0))
     slime_rush = Sprite(start_screen_group)
@@ -214,10 +215,14 @@ def start_screen():
     font = pygame.font.SysFont("comicsans", 30)
     text = font.render('Начать игру', True, (255, 255, 255))
     text2 = font.render('Выйти', True, (255, 255, 255))
+    pygame.mixer.music.load("music/Menu_music.mp3")
+    pygame.mixer.music.play(-1)
+    pygame.mixer.music.set_volume(0.04)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+                pygame.mixer.music.stop()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if button.pressed and event.button == 1:
                     return
@@ -234,6 +239,7 @@ def start_screen():
 
 
 def over_screen(img):
+    pygame.mixer.music.stop()
     fon = pygame.transform.scale(load_image('map.png'), screen_size)
     screen.blit(fon, (0, 0))
     text = Sprite(over_screen_group)
@@ -241,10 +247,14 @@ def over_screen(img):
     text.rect = (width // 2.6, height // 7)
     button = Button(over_screen_group, (width // 2.5, height // 1.5), images_sprites['not_pressed_button'])
     button_exit = Button(button_group, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'])
+    pygame.mixer.music.load("music/Menu_music.mp3")
+    pygame.mixer.music.play(-1)
+    pygame.mixer.music.set_volume(0.04)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+                pygame.mixer.music.stop()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if button.pressed and event.button == 1:
                     return
@@ -359,6 +369,9 @@ hearts = []
 start_screen()
 player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
 generate_hearts()
+pygame.mixer.music.load("music/Cavern_music.mp3")
+pygame.mixer.music.play(-1)
+pygame.mixer.music.set_volume(0.04)
 
 rooms = [False, True, True, 'over']
 running = True
