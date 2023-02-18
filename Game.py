@@ -261,8 +261,10 @@ def over_screen(img):
     text = Sprite(over_screen_group)
     text.image = pygame.transform.scale(load_image(img, -1), (500, 500)).convert_alpha()
     text.rect = (width // 2.6, height // 7)
-    button = Button(over_screen_group, (width // 2.5, height // 1.5), images_sprites['not_pressed_button'])
-    button_exit = Button(button_group, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'])
+    button = Button(over_screen_group, (width // 2.5, height // 1.5), images_sprites['not_pressed_button'],
+                    images_sprites['pressed_button'])
+    button_exit = Button(button_group, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'],
+                         images_sprites['pressed_button'])
     pygame.mixer.music.load("music/Menu_music.mp3")
     pygame.mixer.music.play(-1)
     pygame.mixer.music.set_volume(0.04)
