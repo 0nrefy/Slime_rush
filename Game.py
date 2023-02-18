@@ -377,8 +377,8 @@ images_sprites = {
     'zombie_attacking': load_image('Zombie_attack.png', -1),
     'skeleton_attacking': load_image('Skeleton_attack.png', -1),
     'ratatuy_attacking': load_image('ratatuy_attack.png', -1),
-    'mute_music': load_image('music_off.png', -1),
-    'unmute_music': load_image('music_on.png', -1)
+    'mute_music': load_image('music_on.png', -1),
+    'unmute_music': load_image('music_off.png', -1)
 }
 start_screen_group = SpriteGroup()
 over_screen_group = SpriteGroup()
@@ -459,6 +459,7 @@ while running:
         heart_group = SpriteGroup()
         all_sprites = SpriteGroup()
         monster_group = SpriteGroup()
+        music_on = True
         right, left = False, False
         right_w, left_w = False, True
         up, down = False, False
@@ -466,8 +467,13 @@ while running:
         c_attack = 0
         cur_loc = 0
         hearts = []
+        music = Button(button_group, (1920 - 32, 1080 - 32), images_sprites['mute_music'],
+                       images_sprites['unmute_music'])
         player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
         generate_hearts()
+        pygame.mixer.music.load("music/Cavern_music.mp3")
+        pygame.mixer.music.play(-1)
+        pygame.mixer.music.set_volume(0.04)
 
         rooms = [False, True, True, 'over']
         running = True
