@@ -205,6 +205,7 @@ def terminate():
 
 
 def start_screen():
+    global music_on
     pygame.mixer.music.stop()
     fon = pygame.transform.scale(load_image('start_image.png'), screen_size)
     screen.blit(fon, (0, 0))
@@ -228,14 +229,25 @@ def start_screen():
                 terminate()
                 pygame.mixer.music.stop()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if button.pressed and event.button == 1:
-                    return
+                if event.button == 1:
+                    if button.pressed:
+                        music_on = True
+                        return
+                    elif music.pressed:
+                        if music_on:
+                            pygame.mixer.music.pause()
+                            music_on = False
+                        else:
+                            pygame.mixer.music.unpause()
+                            music_on = True
                 elif button_exit.pressed and event.button == 1:
                     terminate()
         button.image.blit(text, (button.image.get_rect().w // 3.5, button.image.get_rect().h // 4))
         button_exit.image.blit(text2, (button_exit.image.get_rect().w // 3.5,
                                        button_exit.image.get_rect().h // 4))
         screen.blit(fon, screen_size)
+        button_group.draw(screen)
+        button_group.update()
         start_screen_group.draw(screen)
         start_screen_group.update()
         pygame.display.flip()
@@ -364,6 +376,7 @@ button_group = SpriteGroup()
 heart_group = SpriteGroup()
 all_sprites = SpriteGroup()
 monster_group = SpriteGroup()
+music_on = True
 right, left = False, False
 right_w, left_w = False, True
 up, down = False, False
@@ -371,7 +384,7 @@ attack = False
 c_attack = 0
 cur_loc = 0
 hearts = []
-music = Button(button_group, (1920 - 32, 1080 - 32), images_sprites['unmute_music'], images_sprites['mute_music'])
+music = Button(button_group, (1920 - 32, 1080 - 32), images_sprites['mute_music'], images_sprites['unmute_music'])
 
 start_screen()
 player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
@@ -412,6 +425,14 @@ while running:
                         if i.rect.collidepoint(player.rect.x + j, player.rect.y + j):
                             i.damage(player.damage)
                             break
+            if event.button == 1:
+                if music.pressed:
+                    if music_on:
+                        pygame.mixer.music.pause()
+                        music_on = False
+                    else:
+                        pygame.mixer.music.unpause()
+                        music_on = True
         if event.type == pygame.KEYUP:
             if (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and not left:
                 right = False
