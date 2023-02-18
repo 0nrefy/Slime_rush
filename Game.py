@@ -235,10 +235,10 @@ def start_screen():
                         return
                     elif music.pressed:
                         if music_on:
-                            pygame.mixer.music.pause()
+                            pygame.mixer.music.set_volume(0)
                             music_on = False
                         else:
-                            pygame.mixer.music.unpause()
+                            pygame.mixer.music.set_volume(0.04)
                             music_on = True
                 elif button_exit.pressed and event.button == 1:
                     terminate()
@@ -255,6 +255,7 @@ def start_screen():
 
 
 def over_screen(img):
+    global music_on
     pygame.mixer.music.stop()
     fon = pygame.transform.scale(load_image('map.png'), screen_size)
     screen.blit(fon, (0, 0))
@@ -263,7 +264,7 @@ def over_screen(img):
     text.rect = (width // 2.6, height // 7)
     button = Button(over_screen_group, (width // 2.5, height // 1.5), images_sprites['not_pressed_button'],
                     images_sprites['pressed_button'])
-    button_exit = Button(button_group, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'],
+    button_exit = Button(over_screen_group, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'],
                          images_sprites['pressed_button'])
     pygame.mixer.music.load("music/Menu_music.mp3")
     pygame.mixer.music.play(-1)
@@ -272,12 +273,20 @@ def over_screen(img):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-                pygame.mixer.music.stop()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if button.pressed and event.button == 1:
-                    return
-                elif button_exit.pressed and event.button == 1:
-                    terminate()
+                if event.button == 1:
+                    if button.pressed:
+                        music_on = True
+                        return
+                    elif music.pressed:
+                        if music_on:
+                            pygame.mixer.music.set_volume(0)
+                            music_on = False
+                        else:
+                            pygame.mixer.music.set_volume(0.04)
+                            music_on = True
+                    elif button_exit.pressed:
+                        terminate()
         button_group.draw(screen)
         button_group.update()
         over_screen_group.draw(screen)
@@ -395,7 +404,6 @@ pygame.mixer.music.load("music/Cavern_music.mp3")
 pygame.mixer.music.play(-1)
 pygame.mixer.music.set_volume(0.04)
 
-
 rooms = [False, True, True, 'over']
 running = True
 
@@ -430,10 +438,10 @@ while running:
             if event.button == 1:
                 if music.pressed:
                     if music_on:
-                        pygame.mixer.music.pause()
+                        pygame.mixer.music.set_volume(0)
                         music_on = False
                     else:
-                        pygame.mixer.music.unpause()
+                        pygame.mixer.music.set_volume(0.04)
                         music_on = True
         if event.type == pygame.KEYUP:
             if (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and not left:
@@ -444,8 +452,8 @@ while running:
                 up = False
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down = False
-
     if player.health <= 0:
+        music_on = True
         over_screen('Game_over.png')
         button_group = SpriteGroup()
         heart_group = SpriteGroup()
@@ -464,6 +472,7 @@ while running:
         rooms = [False, True, True, 'over']
         running = True
     if rooms[cur_loc] == 'over' and not monster_group:
+        music_on = True
         over_screen('Win.png')
     if attack:
         c_attack += 1
