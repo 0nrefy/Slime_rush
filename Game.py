@@ -85,7 +85,6 @@ class Button(Sprite):
         self.image_not_pressed = image
 
     def update(self):
-        super().update()
         x, y = pygame.mouse.get_pos()
         if self.rect.x <= x <= self.rect.x + self.width and self.rect.y <= y <= self.rect.y + self.height:
             self.image = self.image_pressed
@@ -213,9 +212,9 @@ def start_screen():
     slime_rush.image = load_image('Slime_rush.png', -1)
     slime_rush.image = pygame.transform.scale(slime_rush.image, (1500, 500)).convert_alpha()
     slime_rush.rect = (width // 9, height // 7)
-    button = Button(start_screen_group, (width // 2.5, height // 1.5), images_sprites['not_pressed_button'],
+    button = Button(button_group_s, (width // 2.5, height // 1.5), images_sprites['not_pressed_button'],
                     images_sprites['pressed_button'])
-    button_exit = Button(start_screen_group, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'],
+    button_exit = Button(button_group_s, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'],
                          images_sprites['pressed_button'])
     font = pygame.font.SysFont("comicsans", 30)
     text = font.render('Начать игру', True, (255, 255, 255))
@@ -241,9 +240,12 @@ def start_screen():
                             music_on = True
                     elif button_exit.pressed:
                         terminate()
-        button.image.blit(text, (button.image.get_rect().w // 3.5, button.image.get_rect().h // 4))
-        button_exit.image.blit(text2, (button_exit.image.get_rect().w // 2.9, button_exit.image.get_rect().h // 4))
+        screen.blit(button.image, (width // 2.5, height // 1.5))
+        screen.blit(text, (width // 2.2, height // 1.45))
+        screen.blit(button_exit.image, (width // 2.5, height // 1.2))
+        screen.blit(text2, (width // 2.11, height // 1.17))
         screen.blit(fon, screen_size)
+        button_group_s.update()
         button_group.draw(screen)
         button_group.update()
         start_screen_group.draw(screen)
@@ -260,10 +262,12 @@ def over_screen(img):
     text = Sprite(over_screen_group)
     text.image = pygame.transform.scale(load_image(img, -1), (500, 500)).convert_alpha()
     text.rect = (width // 2.6, height // 7)
-    button = Button(over_screen_group, (width // 2.5, height // 1.5), images_sprites['not_pressed_button'],
+    button = Button(button_group_o, (width // 2.5, height // 1.5), images_sprites['not_pressed_button'],
                     images_sprites['pressed_button'])
-    button_exit = Button(over_screen_group, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'],
+    button_exit = Button(button_group_o, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'],
                          images_sprites['pressed_button'])
+    text = font.render('Начать заново', True, (255, 255, 255))
+    text2 = font.render('Выйти', True, (255, 255, 255))
     pygame.mixer.music.load("music/Menu_music.mp3")
     pygame.mixer.music.play(-1)
     pygame.mixer.music.set_volume(0.04)
@@ -286,6 +290,12 @@ def over_screen(img):
                             music_on = True
                     elif button_exit.pressed:
                         terminate()
+        screen.blit(button.image, (width // 2.5, height // 1.5))
+        screen.blit(text, (width // 2.23, height // 1.45))
+        screen.blit(button_exit.image, (width // 2.5, height // 1.2))
+        screen.blit(text2, (width // 2.11, height // 1.17))
+        button_group_o.update()
+        screen.blit(fon, screen_size)
         button_group.draw(screen)
         button_group.update()
         over_screen_group.draw(screen)
@@ -356,13 +366,16 @@ def move(side):
 
 def start():
     global over_screen_group, rooms, clock, button_group, heart_group, all_sprites, monster_group, music_on, right, \
-        left, right_w, left_w, up, down, attack, c_attack, cur_loc, hearts, music, player
+        left, right_w, left_w, up, down, attack, c_attack, cur_loc, hearts, music, player, button_group_s,\
+        button_group_o
     over_screen_group = SpriteGroup()
     clock = pygame.time.Clock()
     button_group = SpriteGroup()
     heart_group = SpriteGroup()
     all_sprites = SpriteGroup()
     monster_group = SpriteGroup()
+    button_group_s = SpriteGroup()
+    button_group_o = SpriteGroup()
     music_on = True
     right, left = False, False
     right_w, left_w = False, True
