@@ -239,8 +239,8 @@ def start_screen():
                         else:
                             pygame.mixer.music.set_volume(0.04)
                             music_on = True
-                elif button_exit.pressed and event.button == 1:
-                    terminate()
+                    elif button_exit.pressed:
+                        terminate()
         button.image.blit(text, (button.image.get_rect().w // 3.5, button.image.get_rect().h // 4))
         button_exit.image.blit(text2, (button_exit.image.get_rect().w // 2.9, button_exit.image.get_rect().h // 4))
         screen.blit(fon, screen_size)
