@@ -231,7 +231,6 @@ def start_screen():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if button.pressed:
-                        music_on = True
                         return
                     elif music.pressed:
                         if music_on:
@@ -243,8 +242,7 @@ def start_screen():
                 elif button_exit.pressed and event.button == 1:
                     terminate()
         button.image.blit(text, (button.image.get_rect().w // 3.5, button.image.get_rect().h // 4))
-        button_exit.image.blit(text2, (button_exit.image.get_rect().w // 2.9,
-                                       button_exit.image.get_rect().h // 4))
+        button_exit.image.blit(text2, (button_exit.image.get_rect().w // 2.9, button_exit.image.get_rect().h // 4))
         screen.blit(fon, screen_size)
         button_group.draw(screen)
         button_group.update()
@@ -269,6 +267,8 @@ def over_screen(img):
     pygame.mixer.music.load("music/Menu_music.mp3")
     pygame.mixer.music.play(-1)
     pygame.mixer.music.set_volume(0.04)
+    if not music_on:
+        pygame.mixer.music.set_volume(0)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -276,7 +276,6 @@ def over_screen(img):
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if button.pressed:
-                        music_on = True
                         return
                     elif music.pressed:
                         if music_on:
@@ -355,6 +354,38 @@ def move(side):
         right, left = False, True
 
 
+def start():
+    global over_screen_group, rooms, clock, button_group, heart_group, all_sprites, monster_group, music_on, right, \
+        left, right_w, left_w, up, down, attack, c_attack, cur_loc, hearts, music, player
+    over_screen_group = SpriteGroup()
+    clock = pygame.time.Clock()
+    button_group = SpriteGroup()
+    heart_group = SpriteGroup()
+    all_sprites = SpriteGroup()
+    monster_group = SpriteGroup()
+    music_on = True
+    right, left = False, False
+    right_w, left_w = False, True
+    up, down = False, False
+    attack = False
+    c_attack = 0
+    cur_loc = 0
+    hearts = []
+    music = Button(button_group, (1920 - 32, 1080 - 32), images_sprites['mute_music'], images_sprites['unmute_music'])
+
+    start_screen()
+
+    player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
+    generate_hearts()
+    pygame.mixer.music.load("music/Cavern_music.mp3")
+    pygame.mixer.music.play(-1)
+    pygame.mixer.music.set_volume(0.04)
+    if not music_on:
+        pygame.mixer.music.set_volume(0)
+
+    rooms = [False, True, True, 'over']
+
+
 pygame.init()
 screen_size = width, height = (1920, 1080)
 screen = pygame.display.set_mode(screen_size)
@@ -381,30 +412,7 @@ images_sprites = {
     'unmute_music': load_image('music_off.png', -1)
 }
 start_screen_group = SpriteGroup()
-over_screen_group = SpriteGroup()
-clock = pygame.time.Clock()
-button_group = SpriteGroup()
-heart_group = SpriteGroup()
-all_sprites = SpriteGroup()
-monster_group = SpriteGroup()
-music_on = True
-right, left = False, False
-right_w, left_w = False, True
-up, down = False, False
-attack = False
-c_attack = 0
-cur_loc = 0
-hearts = []
-music = Button(button_group, (1920 - 32, 1080 - 32), images_sprites['mute_music'], images_sprites['unmute_music'])
-
-start_screen()
-player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
-generate_hearts()
-pygame.mixer.music.load("music/Cavern_music.mp3")
-pygame.mixer.music.play(-1)
-pygame.mixer.music.set_volume(0.04)
-
-rooms = [False, True, True, 'over']
+start()
 running = True
 
 while running:
@@ -453,34 +461,11 @@ while running:
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down = False
     if player.health <= 0:
-        music_on = True
         over_screen('Game_over.png')
-        over_screen_group = SpriteGroup()
-        button_group = SpriteGroup()
-        heart_group = SpriteGroup()
-        all_sprites = SpriteGroup()
-        monster_group = SpriteGroup()
-        music_on = True
-        right, left = False, False
-        right_w, left_w = False, True
-        up, down = False, False
-        attack = False
-        c_attack = 0
-        cur_loc = 0
-        hearts = []
-        music = Button(button_group, (1920 - 32, 1080 - 32), images_sprites['mute_music'],
-                       images_sprites['unmute_music'])
-        player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
-        generate_hearts()
-        pygame.mixer.music.load("music/Cavern_music.mp3")
-        pygame.mixer.music.play(-1)
-        pygame.mixer.music.set_volume(0.04)
-
-        rooms = [False, True, True, 'over']
-        running = True
+        start()
     if rooms[cur_loc] == 'over' and not monster_group:
-        music_on = True
         over_screen('Win.png')
+        start()
     if attack:
         c_attack += 1
         if c_attack > 20:
