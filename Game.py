@@ -455,6 +455,7 @@ while running:
     if player.health <= 0:
         music_on = True
         over_screen('Game_over.png')
+        over_screen_group = SpriteGroup()
         button_group = SpriteGroup()
         heart_group = SpriteGroup()
         all_sprites = SpriteGroup()
