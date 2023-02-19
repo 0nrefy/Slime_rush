@@ -205,7 +205,7 @@ def terminate():
 
 
 def start_screen():
-    global music_on
+    global music_on, font
     pygame.mixer.music.stop()
     fon = pygame.transform.scale(load_image('start_image.png'), screen_size)
     screen.blit(fon, (0, 0))
@@ -243,7 +243,7 @@ def start_screen():
                 elif button_exit.pressed and event.button == 1:
                     terminate()
         button.image.blit(text, (button.image.get_rect().w // 3.5, button.image.get_rect().h // 4))
-        button_exit.image.blit(text2, (button_exit.image.get_rect().w // 3.5,
+        button_exit.image.blit(text2, (button_exit.image.get_rect().w // 2.9,
                                        button_exit.image.get_rect().h // 4))
         screen.blit(fon, screen_size)
         button_group.draw(screen)
