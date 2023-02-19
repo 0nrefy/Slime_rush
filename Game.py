@@ -304,6 +304,7 @@ def over_screen(img):
         clock.tick(FPS)
 
 
+# уровни(проверяется комната по счёту и есть ли с той стороны с которой находится игрок комната, растановка мобов)
 def check_level(side):
     global cur_loc
     if not monster_group:
@@ -339,6 +340,7 @@ def check_level(side):
             return False
 
 
+# генерация сердец в верхнем правом углу
 def generate_hearts():
     global hearts
     hearts = []
@@ -364,6 +366,7 @@ def move(side):
         right, left = False, True
 
 
+# инициализация всех нужных переменных которые позже могут обновиться
 def start():
     global over_screen_group, rooms, clock, button_group, heart_group, all_sprites, monster_group, music_on, right, \
         left, right_w, left_w, up, down, attack, c_attack, cur_loc, hearts, music, player, button_group_s,\
