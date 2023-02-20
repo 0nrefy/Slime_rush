@@ -369,8 +369,8 @@ def move(side):
 # инициализация всех нужных переменных которые позже могут обновиться
 def start():
     global over_screen_group, rooms, clock, button_group, heart_group, all_sprites, monster_group, music_on, right, \
-        left, right_w, left_w, up, down, attack, c_attack, cur_loc, hearts, music, player, button_group_s,\
-        button_group_o
+        left, right_w, left_w, up, down, attack, c_attack, cur_loc, hearts, music, player, button_group_s, \
+        button_group_o, pause
     over_screen_group = SpriteGroup()
     clock = pygame.time.Clock()
     button_group = SpriteGroup()
@@ -383,13 +383,11 @@ def start():
     right, left = False, False
     right_w, left_w = False, True
     up, down = False, False
-    attack = False
+    attack, pause = False, False
     c_attack = 0
     cur_loc = 0
     hearts = []
     music = Button(button_group, (1920 - 32, 1080 - 32), images_sprites['mute_music'], images_sprites['unmute_music'])
-
-    start_screen()
 
     player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
     generate_hearts()
@@ -427,6 +425,7 @@ images_sprites = {
     'mute_music': load_image('music_on.png', -1),
     'unmute_music': load_image('music_off.png', -1)
 }
+start_screen()
 start_screen_group = SpriteGroup()
 start()
 running = True
@@ -445,21 +444,23 @@ while running:
                 up, down = True, False
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down, up = True, False
+            if event.key == pygame.K_ESCAPE and not pause:
+                pass
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1 and not attack:
-                attack = True
-                player.frames = []
-                player.cut_sheet(images_sprites['player_attack'], 6, 1)
-                player.rect = rect
-                if left_w:
-                    for i in range(len(player.frames)):
-                        player.frames[i] = pygame.transform.flip(player.frames[i], True, False)
-                for i in monster_group:
-                    for j in range(150):
-                        if i.rect.collidepoint(player.rect.x + j, player.rect.y + j):
-                            i.damage(player.damage)
-                            break
             if event.button == 1:
+                if not attack:
+                    attack = True
+                    player.frames = []
+                    player.cut_sheet(images_sprites['player_attack'], 6, 1)
+                    player.rect = rect
+                    if left_w:
+                        for i in range(len(player.frames)):
+                            player.frames[i] = pygame.transform.flip(player.frames[i], True, False)
+                    for i in monster_group:
+                        for j in range(150):
+                            if i.rect.collidepoint(player.rect.x + j, player.rect.y + j):
+                                i.damage(player.damage)
+                                break
                 if music.pressed:
                     if music_on:
                         pygame.mixer.music.set_volume(0)
