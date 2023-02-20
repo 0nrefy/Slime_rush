@@ -370,7 +370,8 @@ def move(side):
 def start():
     global over_screen_group, rooms, clock, button_group, heart_group, all_sprites, monster_group, music_on, right, \
         left, right_w, left_w, up, down, attack, c_attack, cur_loc, hearts, music, player, button_group_s, \
-        button_group_o, pause
+        button_group_o, pause, pause_group
+    pause_group = SpriteGroup()
     over_screen_group = SpriteGroup()
     clock = pygame.time.Clock()
     button_group = SpriteGroup()
@@ -391,9 +392,6 @@ def start():
 
     player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
     generate_hearts()
-    pygame.mixer.music.load("music/Cavern_music.mp3")
-    pygame.mixer.music.play(-1)
-    pygame.mixer.music.set_volume(0.04)
     if not music_on:
         pygame.mixer.music.set_volume(0)
 
@@ -425,9 +423,13 @@ images_sprites = {
     'mute_music': load_image('music_on.png', -1),
     'unmute_music': load_image('music_off.png', -1)
 }
-start_screen()
+
 start_screen_group = SpriteGroup()
 start()
+start_screen()
+pygame.mixer.music.load("music/Cavern_music.mp3")
+pygame.mixer.music.play(-1)
+pygame.mixer.music.set_volume(0.04)
 running = True
 
 while running:
@@ -444,8 +446,49 @@ while running:
                 up, down = True, False
             if (event.key == pygame.K_DOWN or event.key == pygame.K_s) and not up:
                 down, up = True, False
-            if event.key == pygame.K_ESCAPE and not pause:
-                pass
+            if event.key == pygame.K_ESCAPE:
+                pause = True
+                button = Button(pause_group, (width // 2.5, height // 1.5),
+                                images_sprites['not_pressed_button'],
+                                images_sprites['pressed_button'])
+                button_exit = Button(pause_group, (width // 2.5, height // 1.2),
+                                     images_sprites['not_pressed_button'],
+                                     images_sprites['pressed_button'])
+                text = font.render('Продолжить', True, (255, 255, 255))
+                text2 = font.render('Выйти', True, (255, 255, 255))
+                if not music_on:
+                    pygame.mixer.music.set_volume(0)
+                while pause:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            terminate()
+                        if event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_ESCAPE:
+                                pause = False
+                        elif event.type == pygame.MOUSEBUTTONDOWN:
+                            if event.button == 1:
+                                if button.pressed:
+                                    pause = False
+                                elif music.pressed:
+                                    if music_on:
+                                        pygame.mixer.music.set_volume(0)
+                                        music_on = False
+                                    else:
+                                        pygame.mixer.music.set_volume(0.04)
+                                        music_on = True
+                                elif button_exit.pressed:
+                                    terminate()
+                    screen.blit(button.image, (width // 2.5, height // 1.5))
+                    screen.blit(text, (width // 2.23, height // 1.45))
+                    screen.blit(button_exit.image, (width // 2.5, height // 1.2))
+                    screen.blit(text2, (width // 2.11, height // 1.17))
+                    pause_group.update()
+                    screen.blit(images_sprites['map'], screen_size)
+                    all_sprites.draw(screen)
+                    button_group.draw(screen)
+                    button_group.update()
+                    pygame.display.flip()
+                    clock.tick(FPS)
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 if not attack:
