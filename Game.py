@@ -380,11 +380,10 @@ def start():
     monster_group = SpriteGroup()
     button_group_s = SpriteGroup()
     button_group_o = SpriteGroup()
-    music_on = True
     right, left = False, False
     right_w, left_w = False, True
     up, down = False, False
-    attack, pause = False, False
+    attack, pause = True, False
     c_attack = 0
     cur_loc = 0
     hearts = []
@@ -392,6 +391,9 @@ def start():
 
     player = Slime((1920 // 2, 1080 // 2), images_sprites['player'], 4, 1, 0, 0)
     generate_hearts()
+    pygame.mixer.music.load("music/Cavern_music.mp3")
+    pygame.mixer.music.play(-1)
+    pygame.mixer.music.set_volume(0.04)
     if not music_on:
         pygame.mixer.music.set_volume(0)
 
@@ -425,11 +427,14 @@ images_sprites = {
 }
 
 start_screen_group = SpriteGroup()
+music_on = True
 start()
 start_screen()
 pygame.mixer.music.load("music/Cavern_music.mp3")
 pygame.mixer.music.play(-1)
 pygame.mixer.music.set_volume(0.04)
+if not music_on:
+    pygame.mixer.music.set_volume(0)
 running = True
 
 while running:
@@ -448,14 +453,18 @@ while running:
                 down, up = True, False
             if event.key == pygame.K_ESCAPE:
                 pause = True
-                button = Button(pause_group, (width // 2.5, height // 1.5),
+                button = Button(pause_group, (width // 2.5, height // 1.9),
                                 images_sprites['not_pressed_button'],
                                 images_sprites['pressed_button'])
-                button_exit = Button(pause_group, (width // 2.5, height // 1.2),
+                button_new = Button(pause_group, (width // 2.5, height // 1.6),
+                                    images_sprites['not_pressed_button'],
+                                    images_sprites['pressed_button'])
+                button_exit = Button(pause_group, (width // 2.5, height // 1.4),
                                      images_sprites['not_pressed_button'],
                                      images_sprites['pressed_button'])
                 text = font.render('Продолжить', True, (255, 255, 255))
-                text2 = font.render('Выйти', True, (255, 255, 255))
+                text3 = font.render('Выйти', True, (255, 255, 255))
+                text2 = font.render('Начать заново', True, (255, 255, 255))
                 if not music_on:
                     pygame.mixer.music.set_volume(0)
                 while pause:
@@ -469,6 +478,9 @@ while running:
                             if event.button == 1:
                                 if button.pressed:
                                     pause = False
+                                elif button_new.pressed:
+                                    start()
+                                    pause = False
                                 elif music.pressed:
                                     if music_on:
                                         pygame.mixer.music.set_volume(0)
@@ -478,15 +490,18 @@ while running:
                                         music_on = True
                                 elif button_exit.pressed:
                                     terminate()
-                    screen.blit(button.image, (width // 2.5, height // 1.5))
-                    screen.blit(text, (width // 2.23, height // 1.45))
-                    screen.blit(button_exit.image, (width // 2.5, height // 1.2))
-                    screen.blit(text2, (width // 2.11, height // 1.17))
                     pause_group.update()
                     screen.blit(images_sprites['map'], screen_size)
-                    all_sprites.draw(screen)
+                    for _ in all_sprites:
+                        screen.blit(_.image, _.rect)
                     button_group.draw(screen)
                     button_group.update()
+                    screen.blit(button.image, (width // 2.5, height // 1.9))
+                    screen.blit(text, (width // 2.23, height // 1.83))
+                    screen.blit(button_new.image, (width // 2.5, height // 1.6))
+                    screen.blit(text2, (width // 2.2, height // 1.55))
+                    screen.blit(button_exit.image, (width // 2.5, height // 1.4))
+                    screen.blit(text3, (width // 2.11, height // 1.35))
                     pygame.display.flip()
                     clock.tick(FPS)
         if event.type == pygame.MOUSEBUTTONDOWN:
