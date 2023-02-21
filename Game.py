@@ -216,7 +216,6 @@ def start_screen():
                     images_sprites['pressed_button'])
     button_exit = Button(button_group_s, (width // 2.5, height // 1.2), images_sprites['not_pressed_button'],
                          images_sprites['pressed_button'])
-    font = pygame.font.SysFont("comicsans", 30)
     text = font.render('Начать игру', True, (255, 255, 255))
     text2 = font.render('Выйти', True, (255, 255, 255))
     pygame.mixer.music.load("music/Menu_music.mp3")
@@ -370,7 +369,7 @@ def move(side):
 def start():
     global over_screen_group, rooms, clock, button_group, heart_group, all_sprites, monster_group, music_on, right, \
         left, right_w, left_w, up, down, attack, c_attack, cur_loc, hearts, music, player, button_group_s, \
-        button_group_o, pause, pause_group
+        button_group_o, pause, pause_group, font
     pause_group = SpriteGroup()
     over_screen_group = SpriteGroup()
     clock = pygame.time.Clock()
@@ -380,6 +379,7 @@ def start():
     monster_group = SpriteGroup()
     button_group_s = SpriteGroup()
     button_group_o = SpriteGroup()
+    font = pygame.font.SysFont("comicsans", 30)
     right, left = False, False
     right_w, left_w = False, True
     up, down = False, False
@@ -499,7 +499,7 @@ while running:
                     screen.blit(button.image, (width // 2.5, height // 1.9))
                     screen.blit(text, (width // 2.23, height // 1.83))
                     screen.blit(button_new.image, (width // 2.5, height // 1.6))
-                    screen.blit(text2, (width // 2.2, height // 1.55))
+                    screen.blit(text2, (width // 2.25, height // 1.55))
                     screen.blit(button_exit.image, (width // 2.5, height // 1.4))
                     screen.blit(text3, (width // 2.11, height // 1.35))
                     pygame.display.flip()
